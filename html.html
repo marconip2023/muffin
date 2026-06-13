@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Muffin's Medical Log</title>
+    <!-- 引入 Tailwind CSS 用於排版 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 FontAwesome 圖示 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { -webkit-tap-highlight-color: transparent; }
+        .modal-enter { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        /* 隱藏捲軸但保留捲動功能 */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-24 font-sans text-slate-800 selection:bg-amber-100">
+
+    <!-- 頂部導航列 -->
+    <header class="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 shadow-sm flex items-center justify-center">
+        <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-notes-medical text-amber-500"></i>
+            Muffin's Med Log
+        </h1>
+    </header>
+
+    <main class="max-w-md mx-auto p-4 space-y-6">
+        <!-- 頂部提示訊息 -->
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-sm">
+            <div class="flex items-start gap-3">
+                <i class="fa-solid fa-circle-exclamation text-amber-500 mt-1"></i>
+                <div>
+                    <p class="text-sm font-medium text-slate-800 mb-1">3隻在柴灣的狗狗也有拉軟便的情況，但目前不知是哪一隻。</p>
+                    <p class="text-xs text-slate-500">3 dogs in Chai Wan also have soft stool, but currently unsure which one.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 每日紀錄容器 -->
+        <div id="log-container" class="space-y-6">
+            <!-- 內容由 JavaScript 自動生成 -->
+        </div>
+    </main>
+
+    <!-- 右下角新增按鈕 -->
+    <button onclick="openModal()" class="fixed bottom-6 right-6 bg-amber-500 hover:bg-amber-600 text-white rounded-full w-14 h-14 shadow-lg shadow-amber-500/30 transition-transform active:scale-95 flex items-center justify-center z-20">
+        <i class="fa-solid fa-plus text-2xl"></i>
+    </button>
+
+    <!-- 新增紀錄彈出視窗 (Modal) -->
+    <div id="add-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex-col justify-end sm:justify-center sm:items-center sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden modal-enter">
+            
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0">
+                <h2 class="text-lg font-bold text-slate-800">Add Next Day <span class="text-sm font-normal text-slate-500 ml-1">新增紀錄</span></h2>
+                <button onclick="closeModal()" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto">
+                <form id="add-form" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Day / 星期 <span class="text-red-500">*</span></label>
+                        <input type="text" id="input-day" required placeholder="e.g. Sunday / 星期日" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1"><i class="fa-solid fa-utensils text-blue-500 mr-1"></i> Diet / 飲食</label>
+                        <textarea id="input-diet" placeholder="What did Muffin eat? 食了什麼？" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1"><i class="fa-solid fa-poop text-amber-600 mr-1"></i> Stool / 屎便</label>
+                        <textarea id="input-stool" placeholder="Stool condition... 屎便情況..." rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1"><i class="fa-solid fa-info-circle text-purple-500 mr-1"></i> Notes / 狀況</label>
+                        <textarea id="input-notes" placeholder="Vomiting, behavior, etc. 嘔吐或行為表現..." rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 resize-none"></textarea>
+                    </div>
+                </form>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50">
+                <button onclick="saveNewLog()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-xl py-3.5 transition-colors shadow-sm active:scale-[0.98]">
+                    Save Record / 儲存紀錄
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始資料：包含 GitHub 相對路徑的圖片檔名
+        const INITIAL_LOGS = [
+            {
+                id: 'wed',
+                day: 'Wednesday / 星期三',
+                date: 'Night',
+                photoUrl: './Screenshot 2026-06-13 at 21.31.00.jpg',
+                diet: { zh: '兩餐食雞肉、西蘭花、紅蘿蔔', en: '2 meals: Chicken, broccoli, carrots' },
+                stool: { zh: '凌晨肚痛痾黃色屎，水狀，有黏液，帶少少血', en: 'Early AM stomach ache, yellow watery stool with mucus, traces of blood' },
+                notes: { zh: '', en: '' }
+            },
+            {
+                id: 'thu',
+                day: 'Thursday / 星期四',
+                date: '',
+                photoUrl: './Screenshot 2026-06-13 at 21.31.45.jpg',
+                diet: { zh: '兩餐食雞肉、白飯', en: '2 meals: Chicken, rice' },
+                stool: { zh: '變實了，有好轉', en: 'Solidified, showing improvement' },
+                notes: { zh: '', en: '' }
+            },
+            {
+                id: 'fri',
+                day: 'Friday / 星期五',
+                date: '',
+                photoUrl: './Screenshot 2026-06-13 at 21.31.25.jpg',
+                diet: { zh: '早餐：雞肉、白飯。 19:00：雞肉、水', en: 'Breakfast: Chicken, rice. 19:00: Chicken, water' },
+                stool: { zh: '正常 - 深色屎，成形，不軟', en: 'Normal - Dark color, formed, not soft' },
+                notes: { zh: '18:00 嘔吐。 00:00 自己進房睡覺', en: '18:00 Vomited. 00:00 Went to sleep in room by herself' }
+            },
+            {
+                id: 'sat',
+                day: 'Saturday / 星期六',
+                date: '',
+                photoUrl: './Screenshot 2026-06-13 at 21.31.31.jpg',
+                diet: { zh: '食完東西後排便一次。沒有再進食，但每小時喝水', en: 'Pooped once after eating. Ate nothing else, but drank water every hour' },
+                stool: { zh: '不正常 - 黃色水便，雞肉消化不到', en: 'Abnormal - Yellow watery stool, undigested chicken' },
+                notes: { zh: '嘔吐一次', en: 'Vomited once' }
+            }
+        ];
+
+        let logs = [];
+
+        // 初始化
+        function initApp() {
+            const savedData = localStorage.getItem('muffinLogsVanilla');
+            if (savedData) {
+                let parsed = JSON.parse(savedData);
+                // 確保前四天的預設圖片依然正確 (避免緩存舊路徑)
+                logs = parsed.map(log => {
+                    const initial = INITIAL_LOGS.find(il => il.id === log.id);
+                    // 如果是預設的四天且沒有被使用者更改過圖片，則使用初始路徑
+                    if (initial && (!log.photoUrl || log.photoUrl.startsWith('./'))) {
+                        return { ...log, photoUrl: initial.photoUrl };
+                    }
+                    return log;
+                });
+            } else {
+                logs = [...INITIAL_LOGS];
+            }
+            renderLogs();
+        }
+
+        // 渲染 HTML 畫面
+        function renderLogs() {
+            const container = document.getElementById('log-container');
+            container.innerHTML = ''; // 清空
+
+            logs.forEach((log) => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden";
+                
+                // 圖片區域邏輯
+                let photoHTML = '';
+                if (log.photoUrl) {
+                    photoHTML = `<img src="${log.photoUrl}" alt="Log photo" class="w-full h-full object-cover" />`;
+                } else {
+                    photoHTML = `
+                        <div class="w-14 h-14 bg-white rounded-full shadow-sm flex items-center justify-center mb-2">
+                            <i class="fa-solid fa-camera text-slate-400 text-xl"></i>
+                        </div>
+                        <p class="text-sm font-medium text-slate-500">Tap to add photo</p>
+                        <p class="text-xs text-slate-400">點擊加入相片</p>
+                    `;
+                }
+
+                // 內容區域邏輯
+                let contentHTML = '';
+                if (log.diet.zh || log.diet.en) {
+                    contentHTML += `
+                        <div class="flex gap-4">
+                            <div class="mt-1 bg-blue-50 w-9 h-9 rounded-xl flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-utensils text-blue-500 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Diet / 飲食</h3>
+                                <p class="text-slate-800 text-sm mb-1 leading-relaxed">${log.diet.zh}</p>
+                                <p class="text-slate-500 text-xs leading-relaxed">${log.diet.en}</p>
+                            </div>
+                        </div>`;
+                }
+                if (log.stool.zh || log.stool.en) {
+                    contentHTML += `
+                        <div class="flex gap-4">
+                            <div class="mt-1 bg-amber-50 w-9 h-9 rounded-xl flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-poop text-amber-600 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Stool / 屎便</h3>
+                                <p class="text-slate-800 text-sm mb-1 leading-relaxed">${log.stool.zh}</p>
+                                <p class="text-slate-500 text-xs leading-relaxed">${log.stool.en}</p>
+                            </div>
+                        </div>`;
+                }
+                if (log.notes.zh || log.notes.en) {
+                    contentHTML += `
+                        <div class="flex gap-4">
+                            <div class="mt-1 bg-purple-50 w-9 h-9 rounded-xl flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-info text-purple-500 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Notes / 狀況</h3>
+                                <p class="text-slate-800 text-sm mb-1 leading-relaxed">${log.notes.zh}</p>
+                                <p class="text-slate-500 text-xs leading-relaxed">${log.notes.en}</p>
+                            </div>
+                        </div>`;
+                }
+
+                card.innerHTML = `
+                    <div class="bg-slate-800 px-5 py-3 flex justify-between items-center text-white">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-regular fa-calendar text-amber-400"></i>
+                            <h2 class="font-semibold text-base">${log.day}</h2>
+                        </div>
+                        ${log.date ? `<span class="text-xs bg-slate-700 px-2 py-1 rounded-full">${log.date}</span>` : ''}
+                    </div>
+
+                    <div class="relative h-48 bg-slate-100 flex flex-col items-center justify-center cursor-pointer border-b border-slate-100 overflow-hidden" onclick="document.getElementById('file-${log.id}').click()">
+                        ${photoHTML}
+                        <input type="file" id="file-${log.id}" accept="image/*" class="hidden" onchange="handlePhotoUpload('${log.id}', this)" />
+                    </div>
+
+                    <div class="p-5 space-y-5">
+                        ${contentHTML}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // 處理手機上傳照片 (轉換為 Base64 儲存在手機瀏覽器)
+        function handlePhotoUpload(id, inputElement) {
+            const file = inputElement.files[0];
+            if (!file) return;
+
+            // 使用 FileReader 將照片轉為資料網址
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                // 更新該天的圖片
+                const logIndex = logs.findIndex(l => l.id === id);
+                if (logIndex > -1) {
+                    logs[logIndex].photoUrl = dataUrl;
+                    saveData();
+                    renderLogs();
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 儲存到瀏覽器
+        function saveData() {
+            try {
+                localStorage.setItem('muffinLogsVanilla', JSON.stringify(logs));
+            } catch(e) {
+                alert("儲存空間可能不足，無法儲存太大的照片。");
+            }
+        }
+
+        // Modal 視窗開關
+        const modal = document.getElementById('add-modal');
+        function openModal() { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        function closeModal() { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+
+        // 儲存新的一天
+        function saveNewLog() {
+            const dayInput = document.getElementById('input-day').value;
+            if (!dayInput) {
+                alert("請填寫星期幾");
+                return;
+            }
+
+            const newLog = {
+                id: 'log_' + Date.now(),
+                day: dayInput,
+                date: '',
+                photoUrl: null,
+                diet: { zh: document.getElementById('input-diet').value, en: '' },
+                stool: { zh: document.getElementById('input-stool').value, en: '' },
+                notes: { zh: document.getElementById('input-notes').value, en: '' }
+            };
+
+            logs.push(newLog);
+            saveData();
+            renderLogs();
+            
+            // 清空表單並關閉
+            document.getElementById('add-form').reset();
+            closeModal();
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        // 啟動 App
+        window.onload = initApp;
+    </script>
+</body>
+</html>
